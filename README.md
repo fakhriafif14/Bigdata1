@@ -5,8 +5,7 @@
 Setelah menyelesaikan modul ini, praktikan diharapkan mampu: 1.
 Menginisialisasi session PySpark di Google Colab. 2. Memuat (load)
 dataset ke dalam Spark DataFrame. 3. Menghitung statistik deskriptif
-dasar (Mean, StdDev, Min, Max) menggunakan fungsi `.describe()`. 4.
-Menghitung statistik spesifik (Mean, Median, Modus, Varians, Skewness)
+dasar (Mean, StdDev, Min, Max) menggunakan fungsi `.describe()`. 4.Menghitung statistik spesifik (Mean, Median, Modus, Varians, Skewness)
 menggunakan `pyspark.sql.functions`. 5. Memahami tantangan dan solusi
 dalam menghitung median (aproksimasi vs. eksak). 6. Melakukan
 visualisasi distribusi data (Histogram & Box Plot) dari Spark DataFrame.
