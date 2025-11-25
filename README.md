@@ -192,7 +192,7 @@ df = spark.read.csv('diamonds.csv', header=True, inferSchema=True)
 df.printSchema()
 df.show(5)
 ```
-
+ ![image](ss/dataset.png) 
 ---
 
 ## 📊 **3. Latihan dan Penyelesaian**
@@ -211,7 +211,7 @@ statistik = df.select(
 statistik.show()
 
 ```
-
+ ![image](ss/carat.png) 
 #### **Median (Aproksimasi)**
 
 Spark tidak memiliki median eksak untuk dataset besar → digunakan `approxQuantile()`.
@@ -221,7 +221,7 @@ median_approx = df.approxQuantile("carat", [0.5], 0.01)[0]
 print("Median (aproksimasi):", median_approx)
 
 ```
-
+ ![image](ss/median.png) 
 ---
 
 ### **3.2 Perbandingan Rata-Rata `price` berdasarkan `color` (D vs J)**
@@ -231,10 +231,12 @@ mean_price = df.groupBy('color').agg(F.mean('price').alias('avg_price'))
 mean_price.show()
 
 ```
+ ![image](ss/color.png) 
 Lalu kamu bisa melihat mana yang lebih mahal:
 ```python
 mean_price.orderBy('avg_price', ascending=False).show()
 ```
+ ![image](ss/mahal.png) 
 > Hasil umumnya menunjukkan bahwa **berlian color = 'D' lebih mahal** daripada color = 'J'.
 
 ---
@@ -263,7 +265,7 @@ plt.ylabel('Frequency')
 plt.show()
 
 ```
-
+ ![image](ss/histogram.png) 
 ### (c) Analisis Distribusi
 
 * Jika bentuknya **simetris** → Normal
@@ -286,7 +288,7 @@ result_df.show()
 
 result_df.toPandas().to_csv('hasil_statistik.csv', index=False)
 ```
-
+ ![image](ss/akhir.png) 
 ##  **7. Kesimpulan Praktikum**
 
 1. **PySpark** memungkinkan pengolahan data besar tanpa memuat seluruh dataset ke memori, berbeda dengan Pandas.
@@ -295,6 +297,3 @@ result_df.toPandas().to_csv('hasil_statistik.csv', index=False)
 4. Rata-rata harga berlian menunjukkan bahwa **color D lebih mahal daripada color J**.
 5. Sampling membantu memindahkan sebagian data ke Pandas untuk keperluan visualisasi.
 6. Histogram pada kolom `depth` memperlihatkan distribusi yang tidak benar-benar normal, melainkan sedikit skewed.
-
-
---
