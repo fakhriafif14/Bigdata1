@@ -152,10 +152,149 @@ plt.show()
     `color = 'J'`. Manakah yang lebih mahal?
 3.  Buat histogram untuk kolom `depth` menggunakan sampling 10%.
     Tentukan apakah distribusinya Normal, Skewed, atau Bimodal.
+    
 
-## 7. Kesimpulan Praktikum
+---
 
--   PySpark dapat digunakan untuk analisis statistik skala besar.
--   Median aproksimasi jauh lebih efisien dibanding median eksak pada
-    dataset besar.
--   Visualisasi perlu menggunakan sampling agar efisien.
+# 📘 Praktikum PySpark – Analisis Dataset Diamonds
+
+## ⚙️ **Langkah-Langkah Praktikum**
+
+### **1. Setup PySpark di Google Colab**
+
+```bash
+!pip install pyspark
+```
+
+```python
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("Praktikum PySpark - Diamond Analysis").getOrCreate()
+```
+
+---
+
+### **2. Memuat Dataset**
+
+Dataset diambil dari seaborn lalu diubah menjadi Spark DataFrame:
+
+```python
+# Download dataset diamonds.csv dari seaborn
+import pandas as pd
+import seaborn as sns
+
+diamonds = sns.load_dataset('diamonds')
+diamonds.to_csv('diamonds.csv', index=False)
+
+# Membaca ke Spark DataFrame
+df = spark.read.csv('diamonds.csv', header=True, inferSchema=True)
+
+# Cek struktur DataFrame
+df.printSchema()
+df.show(5)
+```
+
+---
+
+## 📊 **3. Latihan dan Penyelesaian**
+
+### **3.1 Statistik Deskriptif Kolom `carat`**
+
+#### **Mean & Standard Deviation**
+
+```python
+from pyspark.sql import functions as F
+
+statistik = df.select(
+    F.mean('carat').alias('Mean'),
+    F.stddev('carat').alias('StdDev')
+)
+statistik.show()
+
+```
+
+#### **Median (Aproksimasi)**
+
+Spark tidak memiliki median eksak untuk dataset besar → digunakan `approxQuantile()`.
+
+```python
+median_approx = df.approxQuantile("carat", [0.5], 0.01)[0]
+print("Median (aproksimasi):", median_approx)
+
+```
+
+---
+
+### **3.2 Perbandingan Rata-Rata `price` berdasarkan `color` (D vs J)**
+
+```python
+mean_price = df.groupBy('color').agg(F.mean('price').alias('avg_price'))
+mean_price.show()
+
+```
+Lalu kamu bisa melihat mana yang lebih mahal:
+```python
+mean_price.orderBy('avg_price', ascending=False).show()
+```
+> Hasil umumnya menunjukkan bahwa **berlian color = 'D' lebih mahal** daripada color = 'J'.
+
+---
+
+### **3.3 Histogram Kolom `depth` (Menggunakan Sampling)**
+
+Spark tidak cocok untuk visualisasi langsung → gunakan teknik **sampling**, lalu ubah menjadi Pandas.
+
+#### **Sampling Data**
+
+```python
+# Ambil 10% data secara acak
+sample_df = df.sample(fraction=0.1, seed=42)
+pandas_df = sample_df.toPandas()
+```
+
+#### **Histogram**
+
+```python
+import matplotlib.pyplot as plt
+
+plt.hist(pandas_df['depth'], bins=30, edgecolor='black')
+plt.title('Histogram of Depth')
+plt.xlabel('Depth')
+plt.ylabel('Frequency')
+plt.show()
+
+```
+
+### (c) Analisis Distribusi
+
+* Jika bentuknya **simetris** → Normal
+* Jika miring ke kanan/kiri → Skewed
+* Jika ada dua puncak → Bimodal
+
+Biasanya kolom `depth` pada dataset **berlian agak miring (skewed)**.
+
+---
+Langkah Akhir (Opsional): Simpan Hasil
+
+Kamu bisa menyimpan hasil mean, median, dll ke file CSV jika diminta:
+```python
+result = [(float(statistik.collect()[0]['Mean']),
+           float(statistik.collect()[0]['StdDev']),
+           float(median_approx))]
+
+result_df = spark.createDataFrame(result, ['Mean', 'StdDev', 'Median'])
+result_df.show()
+
+result_df.toPandas().to_csv('hasil_statistik.csv', index=False)
+```
+
+##  **7. Kesimpulan Praktikum**
+
+1. **PySpark** memungkinkan pengolahan data besar tanpa memuat seluruh dataset ke memori, berbeda dengan Pandas.
+2. Statistik deskriptif seperti **mean** dan **stddev** dapat dihitung secara cepat menggunakan fungsi Spark.
+3. Median tidak tersedia secara eksak, tetapi fungsi **approxQuantile()** menyediakan pendekatan yang efisien.
+4. Rata-rata harga berlian menunjukkan bahwa **color D lebih mahal daripada color J**.
+5. Sampling membantu memindahkan sebagian data ke Pandas untuk keperluan visualisasi.
+6. Histogram pada kolom `depth` memperlihatkan distribusi yang tidak benar-benar normal, melainkan sedikit skewed.
+
+
+--
