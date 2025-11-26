@@ -297,3 +297,366 @@ result_df.toPandas().to_csv('hasil_statistik.csv', index=False)
 4. Rata-rata harga berlian menunjukkan bahwa **color D lebih mahal daripada color J**.
 5. Sampling membantu memindahkan sebagian data ke Pandas untuk keperluan visualisasi.
 6. Histogram pada kolom `depth` memperlihatkan distribusi yang tidak benar-benar normal, melainkan sedikit skewed.
+
+
+# Modul Praktikum 6: Pengantar spark MLlib
+### *Implementasi Regresi, Klasifikasi, dan Clustering menggunakan PySpark di Google Colab*
+
+---
+
+## 🎯 **Tujuan Pembelajaran**
+
+Mahasiswa diharapkan mampu:
+
+1. Menyiapkan lingkungan Spark di Google Colab.
+2. Memahami penggunaan **VectorAssembler** dalam Spark ML.
+3. Mengimplementasikan algoritma:
+
+   * **Linear Regression**
+   * **Logistic Regression**
+   * **K-Means Clustering**
+
+---
+
+# 🧩 **Bagian 1: Setup Lingkungan Spark**
+
+### **1. Instalasi PySpark**
+
+Jalankan di sel pertama Google Colab:
+
+```python
+!pip install pyspark
+```
+
+### **2. Membuat Spark Session**
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Latihan_MLlib") \
+    .getOrCreate()
+
+print("Spark Session berhasil dibuat!")
+```
+
+📸 **Screenshot Output Spark Session**
+
+> *Masukkan gambar di sini*
+> `![spark-session](path_gambar_spark.jpg)`
+
+---
+
+# 📈 **Bagian 2: Regresi Linier – Prediksi Gaji**
+
+### **3. Membuat Dataset Dummy**
+
+```python
+data_gaji = [
+    (1.0, 20, 5000),
+    (2.0, 22, 6000),
+    (3.0, 25, 7000),
+    (4.0, 26, 8500),
+    (5.0, 30, 10000),
+    (6.0, 31, 11500)
+]
+
+columns = ["pengalaman", "umur", "gaji"]
+df_regresi = spark.createDataFrame(data_gaji, columns)
+
+df_regresi.show()
+```
+
+📸 **Screenshot Data Awal**
+
+> Masukkan screenshot:
+> `![regresi-data](path_gambar_data_regresi.jpg)`
+
+---
+
+### **4. Vector Assembler – Menggabungkan Fitur**
+
+```python
+from pyspark.ml.feature import VectorAssembler
+
+assembler = VectorAssembler(
+    inputCols=["pengalaman", "umur"],
+    outputCol="features"
+)
+
+data_siap_reg = assembler.transform(df_regresi).select("features", "gaji")
+data_siap_reg.show(truncate=False)
+```
+
+📸 **Screenshot Data VectorAssembler**
+
+---
+
+### **5. Training & Prediksi Linear Regression**
+
+```python
+from pyspark.ml.regression import LinearRegression
+
+train_data, test_data = data_siap_reg.randomSplit([0.7, 0.3], seed=42)
+
+lr = LinearRegression(featuresCol="features", labelCol="gaji")
+model_lr = lr.fit(train_data)
+
+hasil_prediksi = model_lr.transform(test_data)
+hasil_prediksi.select("features", "gaji", "prediction").show()
+
+print("Koefisien:", model_lr.coefficients)
+print("Intercept:", model_lr.intercept)
+```
+
+📸 **Screenshot Hasil Prediksi Regresi**
+
+---
+
+# 🧪 **Bagian 3: Klasifikasi – Logistic Regression (Churn)**
+
+### **6. Membuat Dataset Churn**
+
+```python
+data_churn = [
+    (2.0, 5, 1),
+    (1.0, 4, 1),
+    (10.0, 0, 0),
+    (12.0, 1, 0),
+    (3.0, 3, 1),
+    (15.0, 0, 0)
+]
+
+df_churn = spark.createDataFrame(data_churn, ["durasi", "komplain", "label"])
+
+assembler_churn = VectorAssembler(
+    inputCols=["durasi", "komplain"],
+    outputCol="features"
+)
+
+data_siap_class = assembler_churn.transform(df_churn).select("features", "label")
+```
+
+### **7. Training Logistic Regression dan Prediksi**
+
+```python
+from pyspark.ml.classification import LogisticRegression
+
+log_reg = LogisticRegression(featuresCol="features", labelCol="label")
+model_churn = log_reg.fit(data_siap_class)
+
+hasil_churn = model_churn.transform(data_siap_class)
+hasil_churn.select("features", "label", "prediction", "probability").show(truncate=False)
+```
+
+📸 **Screenshot Hasil Prediksi Churn**
+
+---
+
+# 🎯 **Bagian 4: Clustering – K-Means**
+
+### **8. Dataset & Training K-Means**
+
+```python
+from pyspark.ml.clustering import KMeans
+
+data_mall = [
+    (15, 39), (16, 81), (17, 6), (18, 77), (19, 40),
+    (50, 50), (55, 55), (60, 60),
+    (100, 90), (110, 95), (120, 88)
+]
+
+df_mall = spark.createDataFrame(data_mall, ["pendapatan", "skor"])
+
+assembler_cluster = VectorAssembler(
+    inputCols=["pendapatan", "skor"],
+    outputCol="features"
+)
+
+data_siap_cluster = assembler_cluster.transform(df_mall)
+
+kmeans = KMeans().setK(3).setSeed(1)
+model_km = kmeans.fit(data_siap_cluster)
+
+prediksi_cluster = model_km.transform(data_siap_cluster)
+prediksi_cluster.show()
+```
+
+📸 **Screenshot K-Means Cluster Result**
+
+---
+
+### **9. Centroid (Pusat Cluster)**
+
+```python
+centers = model_km.clusterCenters()
+for i, c in enumerate(centers):
+    print(f"Cluster {i}: {c}")
+```
+
+📸 **Screenshot Centroid**
+
+---
+
+# 📝 **Bagian 5: Tugas Latihan**
+Berikut **penjelasan versi README.md** yang sudah dirapikan dan disesuaikan dengan format laporan GitHub.
+Semua penjelasan berasal dari dua tugas latihan yang kamu berikan.
+
+Kamu tinggal **copy–paste** ke file `README.md` di GitHub 👍
+
+---
+
+# ✅ **Penjelasan Tugas Latihan — Bagian 5 **
+
+````
+# 🔥 Bagian 5 — Tugas Latihan Spark MLlib
+Bagian ini berisi dua latihan untuk memperdalam pemahaman terkait Regresi dan K-Means Clustering pada Spark MLlib.
+
+---
+
+## 📌 1. Menambahkan Data Baru pada Regresi (Bagian 2)
+
+Pada bagian regresi linier, kita ingin mengetahui berapa **prediksi gaji** untuk seorang karyawan dengan:
+
+- Pengalaman: **10 tahun**
+- Umur: **40 tahun**
+- Gaji: **tidak diketahui** (diisi sementara dengan angka 0)
+
+Data baru ini ditambahkan ke dataset asli, kemudian model Linear Regression dilatih ulang dan digunakan untuk memprediksi gaji dari data tersebut.
+
+### 💻 Kode:
+```python
+from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.regression import LinearRegression
+
+spark = SparkSession.builder.appName("Latihan_MLlib").getOrCreate()
+
+# Data awal
+data_gaji = [
+    (1.0, 20, 5000),
+    (2.0, 22, 6000),
+    (3.0, 25, 7000),
+    (4.0, 26, 8500),
+    (5.0, 30, 10000),
+    (6.0, 31, 11500),
+
+    # Data baru yang ingin diprediksi
+    (10.0, 40, 0)
+]
+
+columns = ["pengalaman", "umur", "gaji"]
+df_regresi = spark.createDataFrame(data_gaji, columns)
+
+# Menggabungkan fitur
+assembler = VectorAssembler(inputCols=["pengalaman", "umur"], outputCol="features")
+data_siap_reg = assembler.transform(df_regresi).select("features", "gaji")
+
+# Training model
+lr = LinearRegression(featuresCol="features", labelCol="gaji")
+model_lr = lr.fit(data_siap_reg)
+
+# Prediksi
+hasil_prediksi = model_lr.transform(data_siap_reg)
+hasil_prediksi.show(truncate=False)
+````
+
+### 🎯 Hasil:
+
+Akan muncul baris prediksi baru seperti:
+
+```
+features=[10.0, 40.0]  |  gaji=0  |  prediction=xxxx
+```
+
+👉 **Nilai “prediction” adalah gaji yang diperkirakan** oleh model untuk pengalaman 10 tahun dan umur 40 tahun.
+
+---
+
+## 📌 2. Mengubah K-Means dari K=3 Menjadi K=2 (Bagian 4)
+
+Pada bagian clustering, awalnya model menggunakan:
+
+* **K = 3**, sehingga data terbagi menjadi 3 kelompok.
+
+Untuk latihan ini, K diubah menjadi:
+
+* **K = 2**, sehingga data akan dikelompokkan ulang menjadi hanya 2 cluster.
+
+Perubahan jumlah cluster akan mempengaruhi hasil pengelompokan. Dengan hanya 2 cluster, biasanya data mall akan terkelompok menjadi:
+
+* **Cluster 0 → Pendapatan rendah / skor belanja rendah (grup “Miskin”)**
+* **Cluster 1 → Pendapatan tinggi / skor belanja tinggi (grup “Kaya”)**
+
+### 💻 Kode:
+
+```python
+from pyspark.ml.clustering import KMeans
+from pyspark.ml.feature import VectorAssembler
+
+# Data mall
+data_mall = [
+    (15, 39), (16, 81), (17, 6), (18, 77), (19, 40),
+    (50, 50), (55, 55), (60, 60),
+    (100, 90), (110, 95), (120, 88)
+]
+
+df_mall = spark.createDataFrame(data_mall, ["pendapatan", "skor"])
+
+# Vector Assembler
+assembler = VectorAssembler(inputCols=["pendapatan", "skor"], outputCol="features")
+data_siap_cluster = assembler.transform(df_mall)
+
+# K-Means dengan K=2
+kmeans = KMeans().setK(2).setSeed(1)
+model_k2 = kmeans.fit(data_siap_cluster)
+
+# Prediksi cluster
+prediksi_cluster = model_k2.transform(data_siap_cluster)
+prediksi_cluster.show()
+
+# Menampilkan pusat cluster
+for i, center in enumerate(model_k2.clusterCenters()):
+    print(f"Cluster {i}: {center}")
+
+```
+ ![image](ss/prediksi.png)
+ 
+### 🎯 Interpretasi:
+
+Dengan **K=2**, hasil pengelompokan menjadi lebih sederhana:
+
+* **Cluster 0 → Penghasilan rendah hingga menengah**
+* **Cluster 1 → Penghasilan tinggi (“Kaya”)**
+
+Ini karena data mall memiliki rentang pendapatan yang sangat berbeda (15–120), sehingga K-Means secara alami memisahkan kelompok berdasarkan besarnya pendapatan dan skor belanja.
+
+---
+
+## 📝 Kesimpulan Tugas Latihan
+
+1. **Linear Regression**
+
+   * Menambah data baru memungkinkan kita memprediksi gaji berdasarkan pola dari data sebelumnya.
+   * Hasil prediksi menunjukkan estimasi gaji untuk pengalaman 10 tahun dan umur 40 tahun.
+
+2. **K-Means**
+
+   * Mengubah jumlah cluster (K) mempengaruhi banyaknya grup dan karakteristik tiap grup.
+   * Dengan K=2, data mall cenderung terbagi menjadi dua kategori besar:
+
+     * Pendapatan rendah → “Miskin”
+     * Pendapatan tinggi → “Kaya”
+ ![image](ss/data.png)
+---
+
+```
+
+---
+
+
+```
+
+
+# 📚 **Selesai**
+
