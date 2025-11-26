@@ -647,6 +647,7 @@ Ini karena data mall memiliki rentang pendapatan yang sangat berbeda (15–120),
 
      * Pendapatan rendah → “Miskin”
      * Pendapatan tinggi → “Kaya”
+       
  ![image](ss/data.png)
 ---
 
