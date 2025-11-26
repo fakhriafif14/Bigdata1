@@ -651,10 +651,6 @@ Ini karena data mall memiliki rentang pendapatan yang sangat berbeda (15–120),
  ![image](ss/data.png)
 ---
 
-```
-
----
-
 
 
 # 📚 **Selesai**
